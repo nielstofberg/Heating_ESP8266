@@ -1,4 +1,5 @@
 #include <ESP8266WebServer.h>
+#include "src/lib_eeprom_data.h"
 
 ESP8266WebServer server(80);
 
@@ -68,18 +69,22 @@ void handleConnected() {
     message += " " + server.argName(i) + ": " + server.arg(i) + " LEN=" ;
     message += server.arg(i).length();
     message += "<br/>";
+    uint8_t len = server.arg(i).length() + 1;
     if (server.argName(i) == "devName") {
-      server.arg(i).toCharArray(configuration.devname,server.arg(i).length()+1);
+      len = (len < DEVNAME_LEN) ? len : DEVNAME_LEN;
+      server.arg(i).toCharArray(configuration.devname,len);
     }
     else if (server.argName(i) == "ssid") {
-      server.arg(i).toCharArray(configuration.ssid,server.arg(i).length()+1);
+      len = (len < SSID_LEN) ? len : SSID_LEN;
+      server.arg(i).toCharArray(configuration.ssid,len);
     }
     else if (server.argName(i) == "password") {
-      server.arg(i).toCharArray(configuration.password,server.arg(i).length()+1);
+      len = (len < PASSWORD_LEN) ? len : PASSWORD_LEN;
+      server.arg(i).toCharArray(configuration.password,len);
     }
   }
 
-  int count =  EEPROM_writeAnything(0, configuration);
+  int count =  lib_eeprom_writeAnything(0, configuration);
   server.send(200, "text/html", message);
 }
 

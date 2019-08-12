@@ -1,7 +1,10 @@
+#ifndef _lib_eeprom_rw_anything_h_
+#define _lib_eeprom_rw_anything_h_
+
 #include <EEPROM.h>
 #include <Arduino.h>  // for type definitions
 
-template <class T> int EEPROM_writeAnything(int ee, const T& value)
+template <class T> int lib_eeprom_writeAnything(int ee, const T& value)
 {
     const byte* p = (const byte*)(const void*)&value;
     unsigned int i;
@@ -14,7 +17,7 @@ template <class T> int EEPROM_writeAnything(int ee, const T& value)
     return i;
 }
 
-template <class T> int EEPROM_readAnything(int ee, T& value)
+template <class T> int lib_eeprom_readAnything(int ee, T& value)
 {
     byte* p = (byte*)(void*)&value;
     unsigned int i;
@@ -22,3 +25,5 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
           *p++ = EEPROM.read(ee++);
     return i;
 }
+
+#endif //_lib_eeprom_rw_anything_h_
