@@ -16,4 +16,7 @@ extern String app_wifi_deviceName;
 extern String app_wifi_ssid;
 extern String app_wifi_passPhrase;
 
+void app_wifi_run(void);
+
+
 #endif // _app_wifi_h_

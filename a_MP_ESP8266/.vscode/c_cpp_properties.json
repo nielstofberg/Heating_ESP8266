@@ -7,7 +7,9 @@
                 "C:\\Users\\niel\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.2\\**",
                 "${workspaceFolder}/**",
                 "C:/Users/niel/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/2.4.2/cores/esp8266",
-                "C:\\\\Users\\\\niel\\\\Documents\\\\Arduino\\\\libraries\\\\PubSubClient\\\\src"
+                "..\\..\\libraries\\PubSubClient\\src",
+                "C:/Users/niel/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/2.4.2/tools/sdk/include",
+                "C:/Users/niel/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/2.4.2/libraries/ESP8266WiFi/src"
             ],
             "defines": [
                 "_DEBUG",

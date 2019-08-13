@@ -15,11 +15,17 @@ void app_applicationName_run(){
   switch (app_wifi_status)
   {
     case INITIALISE_REQ:
+    break;
     case INITIALISED:
+    break;
     case OPERATE_REQ:
+    break;
     case OPERATING:
+    break;
     case SHUTDOWN_REQ:
+    break;
     case SHUTTING_DOWN:
+    break;
   }
 }
 */
