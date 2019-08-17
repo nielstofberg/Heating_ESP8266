@@ -23,5 +23,6 @@ extern String app_mqtt_outTopic;
 extern String app_mqtt_inTopic;
 
 void app_mqtt_run(void);
+void app_mqtt_publish(String topic, String payload);
 
 #endif //_app_mqtt_h_

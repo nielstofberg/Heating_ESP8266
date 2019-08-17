@@ -1,7 +1,10 @@
 #include <ESP8266WebServer.h>
 #include "src/lib_eeprom_data.h"
+#include "src/lib_eeprom_rw_anything.h"
+#include "src/pins_arduino.h"
 #include "src/app_mqtt.h"
-
+#include "src/app_gpio.h"
+#include "src/app_dht.h"
 
 ESP8266WebServer server(80);
 
@@ -55,11 +58,14 @@ void handleConnect()
     html += "SSID: <input type=\"text\" name=\"ssid\" value=\"" + netId + "\"><br>";
     html += "Password: <input type=\"text\" name=\"password\" value=\"" + pw + "\"><br>";
     html += "MQTT Server: <input type=\"text\" name=\"mqttServer\" value=\"" + mqttServer + "\"><br>";
-    html += "Topic 1: <input type=\"text\" name=\"topic1\" value=\"" + topic1 + "\"> ";
-    html += "Publish<input type=\"checkbox\" value=\"pub\" name=\"topic1Pub\" " + (String)((t1Pub) ? "checked": "") + "> ";
-    html += "Subscribe<input type=\"checkbox\" value=\"sub\" name=\"topic1Sub\" " + (String)((t1Sub) ? "checked": "") + "><br>";
-    html += "Topic 1 Pin: <input type=\"text\" name=\"topic1Pin\" value=\"" + (String)(t1Pin) + "\"><br>";
-    
+    for (int i = 0; i < MQTT_PUBSUB_COUNT; i++)
+    {
+        html += "Topic " + String(i) + ": <input type=\"text\" name=\"topic" + String(i) + "\" value=\"" + configuration.mqttData[i].topic + "\"> ";
+        html += "Publish<input type=\"checkbox\" value=\"pub\" name=\"topic" + String(i) + "Pub\" " + (String)((configuration.mqttData[i].publish) ? "checked" : "") + "> ";
+        html += "Subscribe<input type=\"checkbox\" value=\"sub\" name=\"topic" + String(i) + "Sub\" " + (String)((configuration.mqttData[i].subscribe) ? "checked" : "") + "><br>";
+        html += "Topic " + String(i) + " Pin: <input type=\"text\" name=\"topic" + String(i) + "Pin\" value=\"" + (String)(configuration.mqttData[i].ioPinNumber) + "\"><br>";
+    }
+
     html += "<input type=\"submit\" value=\"Subscribe\"></form><p>Click the \"Submit\" button.</p>";
     html += "</body></html>";
 
@@ -73,9 +79,12 @@ void handleConnect()
  */
 void handleConnected()
 {
-    int memAddr = eepromStart;
-    configuration.mqttData[0].publish = false;
-    configuration.mqttData[0].subscribe = false;
+    //int memAddr = eepromStart;
+    for (int n = 0; n < MQTT_PUBSUB_COUNT; n++)
+    {
+        configuration.mqttData[n].publish = false;
+        configuration.mqttData[n].subscribe = false;
+    }
     String message = "<h1>Connect</h1>";
     message += "URI: ";
     message += server.uri();
@@ -110,22 +119,28 @@ void handleConnected()
             len = (len < SERVER_LEN) ? len : SERVER_LEN;
             server.arg(i).toCharArray(configuration.mqttServer, len);
         }
-        else if (server.argName(i) == "topic1")
+        else
         {
-            len = (len < MQTT_TOPIC_LEN) ? len : MQTT_TOPIC_LEN;
-            server.arg(i).toCharArray(configuration.mqttData[0].topic, len);
-        }
-        else if (server.argName(i) == "topic1Pub")
-        {
-            configuration.mqttData[0].publish = true;
-        }
-        else if (server.argName(i) == "topic1Sub")
-        {
-            configuration.mqttData[0].subscribe = true;
-        }
-        else if (server.argName(i) == "topic1Pin")
-        {
-            configuration.mqttData[0].ioPinNumber = server.arg(i).toInt();
+            for (int n = 0; n < MQTT_PUBSUB_COUNT; n++)
+            {
+                if (server.argName(i) == ("topic" + String(n)))
+                {
+                    len = (len < MQTT_TOPIC_LEN) ? len : MQTT_TOPIC_LEN;
+                    server.arg(i).toCharArray(configuration.mqttData[n].topic, len);
+                }
+                else if (server.argName(i) == "topic" + String(n) + "Pub")
+                {
+                    configuration.mqttData[n].publish = true;
+                }
+                else if (server.argName(i) == "topic" + String(n) + "Sub")
+                {
+                    configuration.mqttData[n].subscribe = true;
+                }
+                else if (server.argName(i) == "topic" + String(n) + "Pin")
+                {
+                    configuration.mqttData[n].ioPinNumber = server.arg(i).toInt();
+                }
+            }
         }
     }
     int count = lib_eeprom_writeAnything(0, configuration);
@@ -145,30 +160,30 @@ void handleSetPin()
         {
             String pin = server.argName(i);
             int stat = (server.arg(i) == "0") ? LOW : HIGH;
-            setPin(pin, stat);
+            app_gpio_setPin(pin, stat);
             message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
         }
     }
     else
     {
-        message += "{\"D0\":";
-        message += (digitalRead(D0) == HIGH) ? "1" : "0";
-        message += ", \"D1\":";
-        message += (digitalRead(D1) == HIGH) ? "1" : "0";
-        message += ", \"D2\":";
-        message += (digitalRead(D2) == HIGH) ? "1" : "0";
-        message += ", \"D3\":";
-        message += (digitalRead(D3) == HIGH) ? "1" : "0";
-        message += ", \"D4\":";
-        message += (digitalRead(D4) == HIGH) ? "1" : "0";
-        message += ", \"D5\":";
-        message += (digitalRead(D5) == HIGH) ? "1" : "0";
-        message += ", \"D6\":";
-        message += (digitalRead(D6) == HIGH) ? "1" : "0";
-        message += ", \"D7\":";
-        message += (digitalRead(D7) == HIGH) ? "1" : "0";
-        message += ", \"D8\":";
-        message += (digitalRead(D8) == HIGH) ? "1" : "0";
+        message += "{\"D0\":" + String(digitalRead(D0));
+        //message += (digitalRead(D0) == HIGH) ? "1" : "0";
+        message += ", \"D1\":" + String(digitalRead(D1));
+        //message += (digitalRead(D1) == HIGH) ? "1" : "0";
+        message += ", \"D2\":" + String(digitalRead(D2));
+        //message += (digitalRead(D2) == HIGH) ? "1" : "0";
+        message += ", \"D3\":" + String(digitalRead(D3));
+        //message += (digitalRead(D3) == HIGH) ? "1" : "0";
+        message += ", \"D4\":" + String(digitalRead(D4));
+        //message += (digitalRead(D4) == HIGH) ? "1" : "0";
+        message += ", \"D5\":" + String(digitalRead(D5));
+        //message += (digitalRead(D5) == HIGH) ? "1" : "0";
+        message += ", \"D6\":" + String(digitalRead(D6));
+        //message += (digitalRead(D6) == HIGH) ? "1" : "0";
+        message += ", \"D7\":" + String(digitalRead(D7));
+        //message += (digitalRead(D7) == HIGH) ? "1" : "0";
+        message += ", \"D8\":" + String(digitalRead(D8));
+        //message += (digitalRead(D8) == HIGH) ? "1" : "0";
         message += "}";
     }
     server.send(200, "text/plain", message);
@@ -177,8 +192,8 @@ void handleSetPin()
 void handleTempHum()
 {
     String message = "{\"temp\":";
-    float temp = GetTempratureC();
-    float hum = GetHumidity();
+    float temp = app_dht_temperature;
+    float hum = app_dht_humidity;
     message += temp;
     message += ", \"hum\":";
     message += hum;

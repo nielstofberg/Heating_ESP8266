@@ -1,6 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <WString.h>
 #include "src/app_mqtt.h"
+#include "src/app_gpio.h"
 
 String app_mqtt_server = "";
 String app_mqtt_outTopic = "mqtt\\outTest";
@@ -55,7 +57,7 @@ APP_STATUS_enum app_mqtt_operate()
 
 void app_mqtt_reconnect()
 {
-    if (!mqtt_client.connected() &&
+     if (!mqtt_client.connected() &&
         app_mqtt_server.length() > 0 &&
         millis() > app_mqtt_lastTime + 5000)
     {
@@ -68,20 +70,24 @@ void app_mqtt_reconnect()
         {
             Serial.println("connected");
             // Once connected, publish an announcement...
-            for (int n = 0; n < 1; n++)
+            for (int i = 0; i < MQTT_PUBSUB_COUNT; i++)
             {
-                if (String(app_mqtt_topics[n].topic).length() > 0)
+                if (String(app_mqtt_topics[i].topic).length() > 1)
                 {
-                    if (app_mqtt_topics[n].subscribe)
+                    Serial.println("Topic = " + String(app_mqtt_topics[i].topic));
+                    Serial.println("Publish = " + String(app_mqtt_topics[i].publish));
+                    Serial.println("Subscribe = " + String(app_mqtt_topics[i].subscribe));
+                    
+                    if (app_mqtt_topics[i].subscribe)
                     {
                         // ... and resubscribe
-                        mqtt_client.subscribe(app_mqtt_topics[n].topic);
-                        Serial.println("Subscribed to " + String(app_mqtt_topics[n].topic));
+                        mqtt_client.subscribe(app_mqtt_topics[i].topic);
+                        Serial.println("Subscribed to " + String(app_mqtt_topics[i].topic));
                     }
-                    if (app_mqtt_topics[n].publish)
+                    if (app_mqtt_topics[i].publish)
                     {
-                        mqtt_client.publish(app_mqtt_topics[n].topic, "hello world");
-                        Serial.println("Published to " + String(app_mqtt_topics[n].topic));
+                        mqtt_client.publish(app_mqtt_topics[i].topic, "0");
+                        Serial.println("Published to " + String(app_mqtt_topics[i].topic));
                     }
                 }
             }
@@ -106,4 +112,23 @@ void app_mqtt_msgCallback(char *topic, byte *payload, unsigned int length)
         Serial.print((char)payload[i]);
     }
     Serial.println();
+
+    for(int i = 0; i < MQTT_PUBSUB_COUNT; i++)
+    {
+        if (String(app_mqtt_topics[i].topic) == String(topic) && length > 0)
+        {
+            Serial.print("Message Identified. Writing to pin D" + String(app_mqtt_topics[i].ioPinNumber));
+            Serial.println(" value " + String(payload[0]- 0x30));
+            app_gpio_setPin("D" + String(app_mqtt_topics[i].ioPinNumber), payload[0] - 0x30);
+            break;
+        }
+    }
+}
+
+void app_mqtt_publish(String topic, String payload)
+{
+    if (mqtt_client.connected())
+    {
+        mqtt_client.publish(topic.begin(), payload.begin());
+    }
 }

@@ -1,13 +1,13 @@
 #include <Arduino.h>
 #include <Esp.h>
 #include <EEPROM.h>
-#include <PubSubClient.h> // This is the next thing to add!!!
+#include "src/pins_arduino.h"
 #include "src/lib_eeprom_data.h"
 #include "src/lib_eeprom_rw_anything.h"
-#include "src/pins_arduino.h"
 #include "src/app_enum.h"
 #include "src/app_wifi.h"
 #include "src/app_mqtt.h"
+#include "src/app_dht.h"
 
 #define DEBUG
 #define HAPPY_LED D4
@@ -24,6 +24,7 @@ void configinit()
     ((String) "ESP8266").toCharArray(configuration.devname, 8);
     ((String) "").toCharArray(configuration.ssid, 1);
     ((String) "").toCharArray(configuration.password, 1);
+    ((String) "").toCharArray(configuration.mqttServer, 1);
 
     int count = lib_eeprom_writeAnything(0, configuration);
 }
@@ -48,7 +49,7 @@ void setup()
         app_wifi_ssid = configuration.ssid;
         app_wifi_passPhrase = configuration.password;
         app_mqtt_server = configuration.mqttServer;
-        for (int n = 0; n < 1; n++)
+        for (int n = 0; n < MQTT_PUBSUB_COUNT; n++)
         {
             String(configuration.mqttData[n].topic).toCharArray(app_mqtt_topics[n].topic, String(configuration.mqttData[n].topic).length()+1);
             app_mqtt_topics[n].publish = configuration.mqttData[n].publish;
@@ -73,10 +74,11 @@ void setup()
     digitalWrite(D7, HIGH);
     digitalWrite(D8, HIGH);
 
+    app_dht_enabled = true;
+
     while (true)
     {
         app_wifi_run();
-
         if (app_wifi_status == INITIALISED)
         {
             app_wifi_status = OPERATE_REQ;
@@ -86,13 +88,24 @@ void setup()
     setupWebServer();
     udpSetup();
     app_mqtt_run();
+    app_dht_run();
 
-    app_mqtt_status = OPERATE_REQ;
+    if (app_mqtt_status == INITIALISED)
+    {
+        Serial.println("MQTT Started");
+        app_mqtt_status = OPERATE_REQ;
+    }
+    if (app_dht_status == INITIALISED)
+    {
+        Serial.println("MQTT Started");
+        app_dht_status = OPERATE_REQ;
+    }
 }
 
 void loop()
 {
     app_mqtt_run();
+    app_dht_run();
     handleWebRequest();
     handleUdpRequest();
 
@@ -102,28 +115,12 @@ void loop()
         timer = millis();
         //digitalWrite(HAPPY_LED, ledState);
     }
-}
 
-void setPin(String pin, int stat)
-{
-    unsigned int p = 0;
-    if (pin == "D0")
-        p = D0;
-    else if (pin == "D1")
-        p = D1;
-    else if (pin == "D2")
-        p = D2;
-    else if (pin == "D3")
-        p = D3;
-    else if (pin == "D4")
-        p = D4;
-    else if (pin == "D5")
-        p = D5;
-    else if (pin == "D6")
-        p = D6;
-    else if (pin == "D7")
-        p = D7;
-    else if (pin == "D8")
-        p = D8;
-    digitalWrite(p, stat);
+    if (app_dht_valuesUpdated)
+    {
+        app_mqtt_publish(app_wifi_deviceName + "\\Temperature", String(app_dht_temperature));
+        app_mqtt_publish(app_wifi_deviceName + "\\Humidity", String(app_dht_humidity));
+        app_dht_valuesUpdated = false;
+        // send values to mqtt broker
+    }
 }
