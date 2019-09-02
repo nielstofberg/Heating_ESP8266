@@ -11,9 +11,11 @@
 
 #define DEBUG
 #define HAPPY_LED D4
+#define HAPPY_ON    900
+#define HAPPY_OFF   1023
 
 const int checkVal = 12345;
-int ledState = HIGH;
+int ledState = HAPPY_ON;
 unsigned long timer = 0;
 unsigned long happyTime = 500;
 EEPROM_DATA_struct configuration;
@@ -51,7 +53,8 @@ void setup()
         app_mqtt_server = configuration.mqttServer;
         for (int n = 0; n < MQTT_PUBSUB_COUNT; n++)
         {
-            String(configuration.mqttData[n].topic).toCharArray(app_mqtt_topics[n].topic, String(configuration.mqttData[n].topic).length()+1);
+            sprintf(app_mqtt_topics[n].topic, "%s\\%s\0",configuration.devname, configuration.mqttData[n].topic);
+            //String(configuration.mqttData[n].topic).toCharArray(app_mqtt_topics[n].topic, String(configuration.mqttData[n].topic).length()+1);
             app_mqtt_topics[n].publish = configuration.mqttData[n].publish;
             app_mqtt_topics[n].subscribe = configuration.mqttData[n].subscribe;
             app_mqtt_topics[n].ioPinNumber = configuration.mqttData[n].ioPinNumber;
@@ -67,7 +70,7 @@ void setup()
     pinMode(D6, OUTPUT);
     pinMode(D7, OUTPUT);
     pinMode(D8, OUTPUT);
-    analogWrite(HAPPY_LED, 900);
+    analogWrite(HAPPY_LED, HAPPY_ON);
     //digitalWrite(HAPPY_LED, HIGH);
     digitalWrite(D5, HIGH);
     digitalWrite(D6, HIGH);
@@ -111,9 +114,9 @@ void loop()
 
     if (millis() - timer >= happyTime)
     {
-        ledState = (ledState == HIGH) ? LOW : HIGH;
+        ledState = (ledState == HAPPY_ON) ? HAPPY_OFF : HAPPY_ON;
         timer = millis();
-        //digitalWrite(HAPPY_LED, ledState);
+        analogWrite(HAPPY_LED, ledState);
     }
 
     if (app_dht_valuesUpdated)

@@ -9,6 +9,7 @@
 
 #define MIN_INTERVAL    2000
 
+int dhtFailCount = 0;
 DHT dht(DHTPIN, DHTTYPE);
 
 APP_STATUS_enum app_dht_status = INITIALISE_REQ;
@@ -73,6 +74,10 @@ APP_STATUS_enum app_dht_operate()
              */
             lastRead += interval - MIN_INTERVAL;
             Serial.println("TH Read failed");
+            if (dhtFailCount++ > 10)
+            {
+                return SHUTTING_DOWN;
+            }
         }
         else
         {
