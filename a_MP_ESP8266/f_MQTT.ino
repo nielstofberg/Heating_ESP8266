@@ -86,8 +86,9 @@ void app_mqtt_reconnect()
                     }
                     if (app_mqtt_topics[i].publish)
                     {
-                        mqtt_client.publish(app_mqtt_topics[i].topic, "0");
-                        Serial.println("Published to " + String(app_mqtt_topics[i].topic));
+                        // This causes relay to be turned whenever connection is made which is not good!!
+                        // mqtt_client.publish(app_mqtt_topics[i].topic, "0");
+                        // Serial.println("Published to " + String(app_mqtt_topics[i].topic));
                     }
                 }
             }
