@@ -126,4 +126,14 @@ void loop()
         app_dht_valuesUpdated = false;
         // send values to mqtt broker
     }
+
+    if (app_mqtt_refreshFlag)
+    {
+        // Publish current statusses
+        for(int i = 0; i < MQTT_PUBSUB_COUNT; i++)
+        {
+            app_mqtt_publish(String(app_mqtt_topics[i].topic), String(app_gpio_getPin("D" + String(app_mqtt_topics[i].ioPinNumber))));
+        }
+        app_mqtt_refreshFlag = false;
+    }
 }

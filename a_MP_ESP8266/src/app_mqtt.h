@@ -19,8 +19,10 @@ extern APP_STATUS_enum app_mqtt_status;
 
 extern MQTT_DATA_struct app_mqtt_topics[];
 extern String app_mqtt_server;
-extern String app_mqtt_outTopic;
-extern String app_mqtt_inTopic;
+//extern String app_mqtt_outTopic;
+//extern String app_mqtt_inTopic;
+extern bool app_mqtt_refreshFlag;
+
 
 void app_mqtt_run(void);
 void app_mqtt_publish(String topic, String payload);

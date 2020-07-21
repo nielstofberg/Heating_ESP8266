@@ -4,9 +4,10 @@
 #include "src/app_mqtt.h"
 #include "src/app_gpio.h"
 
+const String REFRESH_TOPIC = "refresh";
 String app_mqtt_server = "";
-String app_mqtt_outTopic = "mqtt\\outTest";
-String app_mqtt_inTopic = "mqtt\\inTest";
+//String app_mqtt_outTopic = "mqtt\\outTest";
+//String app_mqtt_inTopic = "mqtt\\inTest";
 MQTT_DATA_struct app_mqtt_topics[MQTT_PUBSUB_COUNT];
 
 APP_STATUS_enum app_mqtt_status = INITIALISE_REQ;
@@ -14,6 +15,7 @@ APP_STATUS_enum app_mqtt_status = INITIALISE_REQ;
 WiFiClient espClient;
 PubSubClient mqtt_client(espClient);
 uint32_t app_mqtt_lastTime = 0;
+bool app_mqtt_refreshFlag = false;
 
 void app_mqtt_run()
 {
@@ -69,6 +71,11 @@ void app_mqtt_reconnect()
         if (mqtt_client.connect(clientId.c_str()))
         {
             Serial.println("connected");
+
+            // When something gets posted to the refresh topic, it sets the refresh flaf that should be handled in the main loop.
+            mqtt_client.subscribe(REFRESH_TOPIC.begin());
+            Serial.println("Subscribed to " + REFRESH_TOPIC);
+
             // Once connected, publish an announcement...
             for (int i = 0; i < MQTT_PUBSUB_COUNT; i++)
             {
@@ -87,8 +94,8 @@ void app_mqtt_reconnect()
                     if (app_mqtt_topics[i].publish)
                     {
                         // This causes relay to be turned whenever connection is made which is not good!!
-                        // mqtt_client.publish(app_mqtt_topics[i].topic, "0");
-                        // Serial.println("Published to " + String(app_mqtt_topics[i].topic));
+                        mqtt_client.publish(app_mqtt_topics[i].topic, String(app_gpio_getPin("D" + String(app_mqtt_topics[i].ioPinNumber))).begin());
+                        Serial.println("Published to " + String(app_mqtt_topics[i].topic));
                     }
                 }
             }
@@ -113,6 +120,13 @@ void app_mqtt_msgCallback(char *topic, byte *payload, unsigned int length)
         Serial.print((char)payload[i]);
     }
     Serial.println();
+
+    if (REFRESH_TOPIC == String(topic))
+    {
+        app_mqtt_refreshFlag = true;
+        return;
+    }
+
 
     for(int i = 0; i < MQTT_PUBSUB_COUNT; i++)
     {
