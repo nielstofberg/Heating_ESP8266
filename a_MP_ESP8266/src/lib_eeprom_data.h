@@ -19,6 +19,7 @@ typedef struct
   MQTT_DATA_struct mqttData[MQTT_PUBSUB_COUNT];
 } EEPROM_DATA_struct;
 
-extern EEPROM_DATA_struct configuration;
+extern EEPROM_DATA_struct lib_eeprom_config;
+extern bool app_wifi_reset_flag;
 
 #endif //_lib_eeprom_data_h_

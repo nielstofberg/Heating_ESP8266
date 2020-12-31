@@ -1,22 +1,25 @@
 
+#include "src/app_udp.h"
+
 #define UDP_PORT 5454
 const String GET_ID = "GET_ESP8266_ID";
+//EEPROM_DATA_struct lib_eeprom_config;
 
 WiFiUDP Udp;
 
 char packetBuffer[255]; //buffer to hold incoming packet
 
-void udpSetup() {
+void app_udp_setup() {
   Udp.begin(UDP_PORT);
   Serial.print("UDP Server started listening on port: ");
   Serial.println(UDP_PORT);
 }
 
-void handleUdpRequest() {
+void app_udp_run() {
     // if there's data available, read a packet
   int packetSize = Udp.parsePacket();
   if (packetSize) {
-    String devname = configuration.devname;
+    String devname = lib_eeprom_config.devname;
     devname = "ID_" + devname;
     Serial.print("Received packet of size ");
     Serial.println(packetSize);

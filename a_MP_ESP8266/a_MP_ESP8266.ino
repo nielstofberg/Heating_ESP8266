@@ -1,3 +1,7 @@
+/**
+ * Version 1.1 
+ * 
+ */
 #include <Arduino.h>
 #include <Esp.h>
 #include <EEPROM.h>
@@ -5,11 +9,14 @@
 #include "src/lib_eeprom_data.h"
 #include "src/lib_eeprom_rw_anything.h"
 #include "src/app_enum.h"
+#include "src/app_gpio.h"
 #include "src/app_wifi.h"
 #include "src/app_mqtt.h"
 #include "src/app_dht.h"
+#include "src/app_web.h"
+#include "src/app_udp.h"
 
-#define DEBUG
+//#define DEBUG
 #define HAPPY_LED D4
 #define HAPPY_ON    900
 #define HAPPY_OFF   1023
@@ -17,47 +24,48 @@
 const int checkVal = 12345;
 int ledState = HAPPY_ON;
 unsigned long timer = 0;
+unsigned long reset_timer = 0;
 unsigned long happyTime = 500;
-EEPROM_DATA_struct configuration;
+EEPROM_DATA_struct lib_eeprom_config;
 
 void configinit()
 {
-    configuration.checkVal = checkVal;
-    ((String) "ESP8266").toCharArray(configuration.devname, 8);
-    ((String) "").toCharArray(configuration.ssid, 1);
-    ((String) "").toCharArray(configuration.password, 1);
-    ((String) "").toCharArray(configuration.mqttServer, 1);
+    lib_eeprom_config.checkVal = checkVal;
+    ((String) "ESP8266").toCharArray(lib_eeprom_config.devname, 8);
+    ((String) "").toCharArray(lib_eeprom_config.ssid, 1);
+    ((String) "").toCharArray(lib_eeprom_config.password, 1);
+    ((String) "").toCharArray(lib_eeprom_config.mqttServer, 1);
 
-    int count = lib_eeprom_writeAnything(0, configuration);
+    int count = lib_eeprom_writeAnything(0, lib_eeprom_config);
 }
 
 void setup()
 {
     EEPROM.begin(512);
     Serial.begin(115200);
-    lib_eeprom_readAnything(0, configuration);
+    lib_eeprom_readAnything(0, lib_eeprom_config);
 
 #ifdef DEBUG
     Serial.println("This is the current configuration");
-    Serial.println(configuration.checkVal);
-    Serial.println(configuration.devname);
-    Serial.println(configuration.ssid);
-    Serial.println(configuration.password);
+    Serial.println(lib_eeprom_config.checkVal);
+    Serial.println(lib_eeprom_config.devname);
+    Serial.println(lib_eeprom_config.ssid);
+    Serial.println(lib_eeprom_config.password);
 #endif // DEBUG
 
-    if (configuration.checkVal == checkVal)
+    if (lib_eeprom_config.checkVal == checkVal)
     {
-        app_wifi_deviceName = configuration.devname;
-        app_wifi_ssid = configuration.ssid;
-        app_wifi_passPhrase = configuration.password;
-        app_mqtt_server = configuration.mqttServer;
+        app_wifi_deviceName = lib_eeprom_config.devname;
+        app_wifi_ssid = lib_eeprom_config.ssid;
+        app_wifi_passPhrase = lib_eeprom_config.password;
+        app_mqtt_server = lib_eeprom_config.mqttServer;
         for (int n = 0; n < MQTT_PUBSUB_COUNT; n++)
         {
-            sprintf(app_mqtt_topics[n].topic, "%s\\%s\0",configuration.devname, configuration.mqttData[n].topic);
-            //String(configuration.mqttData[n].topic).toCharArray(app_mqtt_topics[n].topic, String(configuration.mqttData[n].topic).length()+1);
-            app_mqtt_topics[n].publish = configuration.mqttData[n].publish;
-            app_mqtt_topics[n].subscribe = configuration.mqttData[n].subscribe;
-            app_mqtt_topics[n].ioPinNumber = configuration.mqttData[n].ioPinNumber;
+            sprintf(app_mqtt_topics[n].topic, "%s\\%s\0",lib_eeprom_config.devname, lib_eeprom_config.mqttData[n].topic);
+            //String(lib_eeprom_config.mqttData[n].topic).toCharArray(app_mqtt_topics[n].topic, String(lib_eeprom_config.mqttData[n].topic).length()+1);
+            app_mqtt_topics[n].publish = lib_eeprom_config.mqttData[n].publish;
+            app_mqtt_topics[n].subscribe = lib_eeprom_config.mqttData[n].subscribe;
+            app_mqtt_topics[n].ioPinNumber = lib_eeprom_config.mqttData[n].ioPinNumber;
         }
     }
     else
@@ -88,8 +96,8 @@ void setup()
             break;
         }
     }
-    setupWebServer();
-    udpSetup();
+    app_web_setup();
+    app_udp_setup();
     app_mqtt_run();
     app_dht_run();
 
@@ -100,7 +108,7 @@ void setup()
     }
     if (app_dht_status == INITIALISED)
     {
-        Serial.println("MQTT Started");
+        Serial.println("DHT Started");
         app_dht_status = OPERATE_REQ;
     }
 }
@@ -109,8 +117,8 @@ void loop()
 {
     app_mqtt_run();
     app_dht_run();
-    handleWebRequest();
-    handleUdpRequest();
+    app_web_run();
+    app_udp_run();
 
     if (millis() - timer >= happyTime)
     {
@@ -135,5 +143,18 @@ void loop()
             app_mqtt_publish(String(app_mqtt_topics[i].topic), String(app_gpio_getPin("D" + String(app_mqtt_topics[i].ioPinNumber))));
         }
         app_mqtt_refreshFlag = false;
+    }
+    if (app_wifi_reset_flag)
+    {
+        if (reset_timer == 0)
+        {
+            reset_timer = millis();
+        }
+        else if ((millis()-reset_timer) > 5000)
+        {
+            reset_timer == 0;
+            Serial.println("Resetting ESP");
+            ESP.restart(); //ESP.reset();
+        }
     }
 }

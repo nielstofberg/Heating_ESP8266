@@ -81,6 +81,7 @@ APP_STATUS_enum app_dht_operate()
         }
         else
         {
+            dhtFailCount = 0;
             lastRead = millis();
             app_dht_valuesUpdated = true;
             app_dht_humidity = hum;

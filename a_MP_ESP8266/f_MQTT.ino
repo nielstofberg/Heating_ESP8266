@@ -81,22 +81,24 @@ void app_mqtt_reconnect()
             {
                 if (String(app_mqtt_topics[i].topic).length() > 1)
                 {
+                    Serial.println("=====================================");
                     Serial.println("Topic = " + String(app_mqtt_topics[i].topic));
-                    Serial.println("Publish = " + String(app_mqtt_topics[i].publish));
-                    Serial.println("Subscribe = " + String(app_mqtt_topics[i].subscribe));
+                    Serial.println("Publish = " + String((app_mqtt_topics[i].publish)? "yes": "no"));
+                    Serial.println("Subscribe = " + String((app_mqtt_topics[i].subscribe)? "yes": "no"));
                     
                     if (app_mqtt_topics[i].subscribe)
                     {
                         // ... and resubscribe
                         mqtt_client.subscribe(app_mqtt_topics[i].topic);
-                        Serial.println("Subscribed to " + String(app_mqtt_topics[i].topic));
+                        Serial.println("Subscribed OK");
                     }
                     if (app_mqtt_topics[i].publish)
                     {
                         // This causes relay to be turned whenever connection is made which is not good!!
-                        mqtt_client.publish(app_mqtt_topics[i].topic, String(app_gpio_getPin("D" + String(app_mqtt_topics[i].ioPinNumber))).begin());
-                        Serial.println("Published to " + String(app_mqtt_topics[i].topic));
+                        app_mqtt_publish(app_mqtt_topics[i].topic, REFRESH_TOPIC);
+                        Serial.println("Published " + REFRESH_TOPIC);
                     }
+                    Serial.println("=====================================");
                 }
             }
         }
@@ -112,22 +114,22 @@ void app_mqtt_reconnect()
 
 void app_mqtt_msgCallback(char *topic, byte *payload, unsigned int length)
 {
-    Serial.print("Message arrived [");
-    Serial.print(topic);
-    Serial.print("] ");
-    for (int i = 0; i < length; i++)
-    {
-        Serial.print((char)payload[i]);
-    }
-    Serial.println();
+    payload[length] = 0x00; // Terminate payload so that it can be treated a a string
 
+    Serial.println("MQTT [" + String(topic) + "] Received " + String((char*)payload));
+    
     if (REFRESH_TOPIC == String(topic))
     {
         app_mqtt_refreshFlag = true;
         return;
     }
 
-
+    if (String((char*)payload) == REFRESH_TOPIC)
+    {
+        // This was a refresh request sent to the server
+        return;
+    }
+    
     for(int i = 0; i < MQTT_PUBSUB_COUNT; i++)
     {
         if (String(app_mqtt_topics[i].topic) == String(topic) && length > 0)
