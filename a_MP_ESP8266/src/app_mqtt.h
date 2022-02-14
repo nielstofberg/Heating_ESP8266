@@ -6,6 +6,7 @@
 
 #define MQTT_PUBSUB_COUNT   4
 #define MQTT_TOPIC_LEN      30
+#define MQTT_CREDENTIAL_LEN 15
 
 typedef struct 
 {
@@ -19,6 +20,8 @@ extern APP_STATUS_enum app_mqtt_status;
 
 extern MQTT_DATA_struct app_mqtt_topics[];
 extern String app_mqtt_server;
+extern String app_mqtt_username;
+extern String app_mqtt_password;
 //extern String app_mqtt_outTopic;
 //extern String app_mqtt_inTopic;
 extern bool app_mqtt_refreshFlag;

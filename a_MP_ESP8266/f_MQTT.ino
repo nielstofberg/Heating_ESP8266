@@ -6,6 +6,8 @@
 
 const String REFRESH_TOPIC = "refresh";
 String app_mqtt_server = "";
+String app_mqtt_username = "";
+String app_mqtt_password = "";
 //String app_mqtt_outTopic = "mqtt\\outTest";
 //String app_mqtt_inTopic = "mqtt\\inTest";
 MQTT_DATA_struct app_mqtt_topics[MQTT_PUBSUB_COUNT];
@@ -68,7 +70,7 @@ void app_mqtt_reconnect()
         String clientId = "ESP8266Client-";
         clientId += String(random(0xffff), HEX);
         // Attempt to connect
-        if (mqtt_client.connect(clientId.c_str()))
+        if (mqtt_client.connect(clientId.c_str(), app_mqtt_username.begin(), app_mqtt_password.begin()))
         {
             Serial.println("connected");
 

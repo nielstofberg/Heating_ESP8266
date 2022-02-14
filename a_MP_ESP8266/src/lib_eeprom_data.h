@@ -16,6 +16,8 @@ typedef struct
   char ssid[SSID_LEN];
   char password[PASSWORD_LEN];
   char mqttServer[SERVER_LEN];
+  char mqttUsername[MQTT_CREDENTIAL_LEN];
+  char mqttPassword[MQTT_CREDENTIAL_LEN];
   MQTT_DATA_struct mqttData[MQTT_PUBSUB_COUNT];
 } EEPROM_DATA_struct;
 

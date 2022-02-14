@@ -47,6 +47,8 @@ void handleConnect()
     String netId = lib_eeprom_config.ssid;
     String pw = lib_eeprom_config.password;
     String mqttServer = lib_eeprom_config.mqttServer;
+    String mqttUsername = lib_eeprom_config.mqttUsername;
+    String mqttPassword = lib_eeprom_config.mqttPassword;
     String topic1 = lib_eeprom_config.mqttData[0].topic;
     bool t1Pub = lib_eeprom_config.mqttData[0].publish;
     bool t1Sub = lib_eeprom_config.mqttData[0].subscribe;
@@ -57,6 +59,8 @@ void handleConnect()
     html += "SSID: <input type=\"text\" name=\"ssid\" value=\"" + netId + "\"><br>";
     html += "Password: <input type=\"text\" name=\"password\" value=\"" + pw + "\"><br>";
     html += "MQTT Server: <input type=\"text\" name=\"mqttServer\" value=\"" + mqttServer + "\"><br>";
+    html += "MQTT Username: <input type=\"text\" name=\"mqttUsername\" value=\"" + mqttUsername + "\"><br>";
+    html += "MQTT Password: <input type=\"text\" name=\"mqttPassword\" value=\"" + mqttPassword + "\"><br>";
     for (int i = 0; i < MQTT_PUBSUB_COUNT; i++)
     {
         html += "Topic " + String(i) + ": <input type=\"text\" name=\"topic" + String(i) + "\" value=\"" + lib_eeprom_config.mqttData[i].topic + "\"> ";
@@ -108,6 +112,16 @@ void handleConnected()
             {
                 len = (len < SERVER_LEN) ? len : SERVER_LEN;
                 server.arg(i).toCharArray(lib_eeprom_config.mqttServer, len);
+            }
+            else if (server.argName(i) == "mqttUsername")
+            {
+                len = (len < SERVER_LEN) ? len : SERVER_LEN;
+                server.arg(i).toCharArray(lib_eeprom_config.mqttUsername, len);
+            }
+            else if (server.argName(i) == "mqttPassword")
+            {
+                len = (len < SERVER_LEN) ? len : SERVER_LEN;
+                server.arg(i).toCharArray(lib_eeprom_config.mqttPassword, len);
             }
             else
             {

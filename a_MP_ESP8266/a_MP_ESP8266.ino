@@ -16,7 +16,7 @@
 #include "src/app_web.h"
 #include "src/app_udp.h"
 
-//#define DEBUG
+#define DEBUG
 #define HAPPY_LED D4
 #define HAPPY_ON    900
 #define HAPPY_OFF   1023
@@ -59,6 +59,8 @@ void setup()
         app_wifi_ssid = lib_eeprom_config.ssid;
         app_wifi_passPhrase = lib_eeprom_config.password;
         app_mqtt_server = lib_eeprom_config.mqttServer;
+        app_mqtt_username = lib_eeprom_config.mqttUsername;
+        app_mqtt_password = lib_eeprom_config.mqttPassword;
         for (int n = 0; n < MQTT_PUBSUB_COUNT; n++)
         {
             sprintf(app_mqtt_topics[n].topic, "%s\\%s\0",lib_eeprom_config.devname, lib_eeprom_config.mqttData[n].topic);
